@@ -29,7 +29,7 @@ const steps = [
   {
     step: '01',
     title: 'Connect Your Data',
-    description: 'Log income and expenses once and Legend learns what "normal" looks like.'
+    description: 'Log income and expenses once and RythmIQ learns what "normal" looks like.'
   },
   {
     step: '02',
@@ -73,7 +73,7 @@ export default function LandingPage() {
         <div className="landing-header__inner">
           <div className="brand-mark">
             <TrendingUp size={24} />
-            <span>Legend</span>
+            <span>RythmIQ</span>
           </div>
           <nav className="landing-nav">
             <a href="#features">Features</a>
@@ -91,7 +91,7 @@ export default function LandingPage() {
           <p className="eyebrow">AI FINANCIAL COACH FOR REAL LIFE</p>
           <h1>Finance without the middleman</h1>
           <p className="lede">
-            Meet Legend &mdash; an AI coach that adjusts to income swings, busy side hustles, and everyday goals.
+            Meet RythmIQ &mdash; an AI coach that adjusts to income swings, busy side hustles, and everyday goals.
             Built for gig workers, informal earners, and anyone who wants less stress around money.
           </p>
           <div className="hero__actions">
@@ -108,7 +108,7 @@ export default function LandingPage() {
         <section id="features" className="section surface">
           <div className="section-heading">
             <h2>Intelligent financial coaching</h2>
-            <p>Legend adapts to how you earn, spend, and plan so the advice always fits.</p>
+            <p>RythmIQ adapts to how you earn, spend, and plan so the advice always fits.</p>
           </div>
           <div className="feature-grid">
             {features.map((feature) => (
@@ -156,7 +156,7 @@ export default function LandingPage() {
           <div>
             <div className="brand-mark">
               <TrendingUp size={20} />
-              <span>Legend</span>
+              <span>RythmIQ</span>
             </div>
             <p>Your AI financial coach for the real world.</p>
           </div>
@@ -173,7 +173,7 @@ export default function LandingPage() {
             </div>
           ))}
         </div>
-        <p className="footer-bottom">&copy; {new Date().getFullYear()} Legend. All rights reserved.</p>
+        <p className="footer-bottom">&copy; {new Date().getFullYear()} RythmIQ. All rights reserved.</p>
       </footer>
     </div>
   )

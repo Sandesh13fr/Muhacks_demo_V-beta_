@@ -87,7 +87,7 @@ export default function SignupPage() {
       <div className="auth-card">
         <div className="brand-mark brand-mark--center">
           <TrendingUp size={28} />
-          <span>Legend</span>
+          <span>RythmIQ</span>
         </div>
         <h1>Get started</h1>
         <p className="muted">Begin your journey to financial wellness.</p>

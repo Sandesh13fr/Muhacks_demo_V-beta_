@@ -33,7 +33,7 @@ export default function LoginPage() {
       <div className="auth-card">
         <div className="brand-mark brand-mark--center">
           <TrendingUp size={28} />
-          <span>Legend</span>
+          <span>RythmIQ</span>
         </div>
         <h1>Welcome back</h1>
         <p className="muted">Sign in to your financial coaching dashboard.</p>

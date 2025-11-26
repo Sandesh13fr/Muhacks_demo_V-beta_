@@ -174,7 +174,7 @@ export default function DashboardPage() {
           {sidebarOpen && (
             <div className="brand-mark">
               <TrendingUp size={22} />
-              <span>Legend</span>
+              <span>RythmIQ</span>
             </div>
           )}
           <button className="icon-btn" onClick={() => setSidebarOpen((prev) => !prev)}>

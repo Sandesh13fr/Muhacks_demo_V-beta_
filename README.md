@@ -1,6 +1,6 @@
 ## RythmIQ
 
-Legend (a.k.a. RythmIQ) is a Vite + React dashboard that now uses [Supabase](https://supabase.com) for authentication, storage, and real-time transaction tracking. This document walks through the local setup, required environment variables, and Supabase schema expectations.
+RythmIQ (a.k.a. RythmIQ) is a Vite + React dashboard that now uses [Supabase](https://supabase.com) for authentication, storage, and real-time transaction tracking. This document walks through the local setup, required environment variables, and Supabase schema expectations.
 
 ### Prerequisites
 
