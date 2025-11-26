@@ -19,15 +19,17 @@ export async function fetchTransactions(userId) {
     .from('transactions')
     .select('*')
     .eq('user_id', userId)
-    .order('date', { ascending: false })
+    .order('timestamp', { ascending: false })
   if (error) throw error
   return data || []
 }
 
 export async function createTransaction(userId, payload) {
+  const { date: formDate, ...rest } = payload
+  const isoTimestamp = formDate ? `${formDate}T00:00:00.000Z` : new Date().toISOString()
   const { data, error } = await supabase
     .from('transactions')
-    .insert([{ ...payload, user_id: userId }])
+    .insert([{ ...rest, user_id: userId, timestamp: isoTimestamp }])
     .select()
     .single()
   if (error) throw error

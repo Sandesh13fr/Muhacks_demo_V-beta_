@@ -7,10 +7,15 @@ export function useTransactionsData(userId) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  const normalizeTransaction = useCallback((transaction) => ({
-    ...transaction,
-    amount: Number(transaction.amount ?? 0)
-  }), [])
+  const normalizeTransaction = useCallback((transaction) => {
+    const isoSource = transaction.date || transaction.timestamp || transaction.created_at || new Date().toISOString()
+    const formattedDate = isoSource.includes('T') ? isoSource.split('T')[0] : isoSource
+    return {
+      ...transaction,
+      date: formattedDate,
+      amount: Number(transaction.amount ?? 0)
+    }
+  }, [])
 
   const loadTransactions = useCallback(async () => {
     if (!userId) {

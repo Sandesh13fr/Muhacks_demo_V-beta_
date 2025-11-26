@@ -24,8 +24,8 @@ export default function TransactionForm({ incomeCategories, expenseCategories, o
       category,
       description,
       source: type === 'income' ? source : undefined,
-      recurring: type === 'expense' ? isRecurring : false,
-      recurringFrequency: type === 'expense' && isRecurring ? frequency : undefined
+      is_recurring: type === 'expense' ? isRecurring : false,
+      recurring_frequency: type === 'expense' && isRecurring ? frequency : undefined
     })
 
     setAmount('')
