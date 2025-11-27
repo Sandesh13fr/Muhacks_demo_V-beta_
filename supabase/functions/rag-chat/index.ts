@@ -17,8 +17,9 @@ const getEnv = (key: string): string =>
 
 const supabaseUrl = getEnv('SUPABASE_URL') || getEnv('VITE_SUPABASE_URL')
 const serviceRoleKey = getEnv('SUPABASE_SERVICE_ROLE_KEY') || getEnv('SUPABASE_SERVICE_ROLE') || getEnv('VITE_SUPABASE_SERVICE_ROLE_KEY')
+const supabaseAnonKey = getEnv('SUPABASE_ANON_KEY') || getEnv('VITE_SUPABASE_ANON_KEY')
 const geminiApiKey = getEnv('GEMINI_API_KEY')
-const geminiModel = getEnv('GEMINI_MODEL') || 'gemini-1.5-flash-latest'
+const geminiModel = getEnv('GEMINI_MODEL') || 'gemini-2.5-pro'
 
 if (!supabaseUrl || !serviceRoleKey) {
   console.error('Missing Supabase credentials for rag-chat function.')
@@ -32,7 +33,16 @@ const supabase = createClient(supabaseUrl, serviceRoleKey, {
   auth: { persistSession: false }
 })
 
-const systemPrompt = `You are Legend's on-call AI money coach. Combine the provided knowledge base passages with prior chat context to give clear, affirmative, and actionable financial guidance. Reference applicable snippets from the knowledge base when useful, and ask clarifying questions when information is missing. Format insights as short paragraphs or bullet lists and keep the tone supportive.`
+type Transaction = {
+  id: string
+  date: string
+  amount: number
+  type: string
+  category: string | null
+  description: string | null
+}
+
+const systemPrompt = `You are RythmIQ's on-call AI money coach. Combine the provided knowledge base passages with prior chat context to give clear, affirmative, and actionable financial guidance. Reference applicable snippets from the knowledge base when useful, and ask clarifying questions when information is missing. Format insights as short paragraphs or bullet lists and keep the tone supportive.`
 
 function sanitizeQuery(query: string) {
   return query.replace(/[\%_]/g, ' ').slice(0, 512)
@@ -60,7 +70,76 @@ async function fetchContext(query: string) {
   return fallback ?? []
 }
 
-function buildPrompt(message: string, history: Array<{ role: string; content: string }>, documents: any[], userId?: string) {
+async function fetchTransactions(userId?: string): Promise<Transaction[]> {
+  if (!userId) return []
+
+  const { data, error } = await supabase
+    .from('transactions')
+    .select('id,date,amount,type,category,description')
+    .eq('user_id', userId)
+    .order('date', { ascending: false })
+    .limit(8)
+
+  if (error) {
+    console.error('Failed to load transactions', error)
+    return []
+  }
+
+  return data ?? []
+}
+
+function toCsvValue(value: string | number | null | undefined) {
+  const text = value === null || value === undefined ? '' : String(value)
+  return `"${text.replace(/"/g, '""')}"`
+}
+
+function transactionsToCsv(transactions: Transaction[]) {
+  if (!transactions.length) return ''
+  const header = 'date,type,category,amount,description'
+  const rows = transactions.map((tx) => {
+    const date = tx.date?.split('T')[0] ?? ''
+    const amount = Number(tx.amount || 0).toFixed(2)
+    const category = tx.category || 'Uncategorized'
+    return [date, tx.type, category, amount, tx.description ?? ''].map(toCsvValue).join(',')
+  })
+  return [header, ...rows].join('\n')
+}
+
+function extractBearerToken(req: Request) {
+  const header = req.headers.get('Authorization')?.trim()
+  if (!header) return ''
+  const match = header.match(/^Bearer\s+(.+)$/i)
+  return match?.[1]?.trim() ?? ''
+}
+
+async function resolveUserId(req: Request, provided?: string) {
+  if (provided) return provided
+
+  const token = extractBearerToken(req)
+  if (!token || (supabaseAnonKey && token === supabaseAnonKey)) {
+    return undefined
+  }
+
+  try {
+    const { data, error } = await supabase.auth.getUser(token)
+    if (error) {
+      console.warn('Failed to decode auth token for rag-chat', error.message)
+      return undefined
+    }
+    return data?.user?.id ?? undefined
+  } catch (authError) {
+    console.error('resolveUserId error', authError)
+    return undefined
+  }
+}
+
+function buildPrompt(
+  message: string,
+  history: Array<{ role: string; content: string }>,
+  documents: any[],
+  transactions: Transaction[],
+  userId?: string
+) {
   const historyBlock = history
     .slice(-8)
     .map((entry) => `${entry.role === 'assistant' ? 'Coach' : 'User'}: ${entry.content}`)
@@ -70,10 +149,13 @@ function buildPrompt(message: string, history: Array<{ role: string; content: st
     .map((doc, index) => `Source ${index + 1} (${doc.title ?? 'Untitled'}):\n${doc.content}`)
     .join('\n---\n')
 
+  const transactionsCsv = transactionsToCsv(transactions)
+
   return [
     systemPrompt,
     userId ? `The authenticated Supabase user id is ${userId}.` : '',
     contextBlock ? `Knowledge base passages:\n${contextBlock}` : 'No knowledge base context was retrieved. Focus on general coaching best practices.',
+    transactionsCsv ? `Recent transactions CSV (date,type,category,amount,description):\n${transactionsCsv}` : '',
     historyBlock ? `Recent conversation history:\n${historyBlock}` : '',
     `User question: ${message}`,
     'Respond with concise, compassionate financial coaching guidance. Reference specific sources when applicable.'
@@ -131,7 +213,8 @@ serve(async (req: any) => {
     const payload = await req.json()
     const message = typeof payload?.message === 'string' ? payload.message.trim() : ''
     const history = Array.isArray(payload?.history) ? payload.history : []
-    const userId = typeof payload?.userId === 'string' ? payload.userId : undefined
+    const requestedUserId = typeof payload?.userId === 'string' ? payload.userId : undefined
+    const resolvedUserId = await resolveUserId(req, requestedUserId)
 
     if (!message) {
       return new Response(JSON.stringify({ error: 'Message is required.' }), {
@@ -140,11 +223,11 @@ serve(async (req: any) => {
       })
     }
 
-    const documents = await fetchContext(message)
-    const prompt = buildPrompt(message, history, documents, userId)
+    const [documents, transactions] = await Promise.all([fetchContext(message), fetchTransactions(resolvedUserId)])
+    const prompt = buildPrompt(message, history, documents, transactions, resolvedUserId)
     const reply = await callGemini(prompt)
 
-    return new Response(JSON.stringify({ reply, sources: documents }), {
+    return new Response(JSON.stringify({ reply, sources: documents, transactions, userId: resolvedUserId }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   } catch (error: unknown) {

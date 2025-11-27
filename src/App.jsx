@@ -5,7 +5,6 @@ import SignupPage from './pages/SignupPage.jsx'
 import DashboardPage from './pages/DashboardPage.jsx'
 import TrackPage from './pages/TrackPage.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
-import ChatbotWidget from './components/ChatbotWidget.jsx'
 
 export default function App() {
   return (
@@ -32,7 +31,6 @@ export default function App() {
         />
         <Route path="*" element={<LandingPage />} />
       </Routes>
-      <ChatbotWidget />
     </div>
   )
 }

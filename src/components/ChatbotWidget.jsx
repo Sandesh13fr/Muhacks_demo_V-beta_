@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { Loader2, MessageCircle, Send, X } from 'lucide-react'
+import { Loader2, Send } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 
-const greeting = `Hi! I'm Legend's AI coach. Ask me about cashflow, savings moves, or budgeting tactics and I'll combine what I know from your workspace with the latest playbooks.`
+const greeting = `Hi! I'm RythmIQ's AI coach. Ask me about cashflow, savings moves, or budgeting tactics and I'll combine what I know from your workspace with the latest playbooks.`
 
 function buildEndpoint() {
   const explicit = import.meta.env.VITE_RAG_CHAT_URL
@@ -14,9 +14,8 @@ function buildEndpoint() {
   return ''
 }
 
-export default function ChatbotWidget() {
+export default function ChatbotWidget({ className = '' }) {
   const { user, session } = useAuth()
-  const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState([{ id: 'intro', role: 'assistant', content: greeting }])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -26,17 +25,12 @@ export default function ChatbotWidget() {
   const endpoint = buildEndpoint()
 
   useEffect(() => {
-    if (!isOpen) return
     requestAnimationFrame(() => {
       if (containerRef.current) {
         containerRef.current.scrollTo({ top: containerRef.current.scrollHeight, behavior: 'smooth' })
       }
     })
-  }, [messages, isOpen])
-
-  const toggleWidget = () => {
-    setIsOpen((prev) => !prev)
-  }
+  }, [messages])
 
   const submitMessage = async () => {
     const trimmed = input.trim()
@@ -103,61 +97,51 @@ export default function ChatbotWidget() {
   }
 
   return (
-    <div className="chatbot-widget" aria-live="polite">
-      {isOpen && (
-        <section className="chatbot-panel" aria-label="Legend AI Coach">
-          <header className="chatbot-panel__head">
-            <div>
-              <p className="chatbot-panel__title">Legend AI Coach</p>
-              <span className="muted chatbot-panel__subtitle">Powered by Gemini + rag_documents</span>
-            </div>
-            <button className="icon-btn" onClick={toggleWidget} aria-label="Close chat window">
-              <X size={16} />
-            </button>
-          </header>
-          <div className="chatbot-messages" ref={containerRef}>
-            {messages.map((message) => (
-              <article key={message.id} className={`chatbot-message chatbot-message--${message.role}`}>
-                <span>{message.content}</span>
-              </article>
+    <section className={`chatbot-panel chatbot-panel--inline ${className}`.trim()} aria-label="RythmIQ AI Coach">
+      <header className="chatbot-panel__head">
+        <div>
+          <p className="chatbot-panel__title">RythmIQ AI Coach</p>
+          <span className="muted chatbot-panel__subtitle">Ask questions. Get tailored moves.</span>
+        </div>
+      </header>
+      <div className="chatbot-messages" ref={containerRef}>
+        {messages.map((message) => (
+          <article key={message.id} className={`chatbot-message chatbot-message--${message.role}`}>
+            <span>{message.content}</span>
+          </article>
+        ))}
+        {loading && (
+          <article className="chatbot-message chatbot-message--assistant chatbot-message--typing">
+            <Loader2 size={16} className="spin" />
+            <span>Thinking...</span>
+          </article>
+        )}
+      </div>
+      {error && <p className="feedback feedback--error">{error}</p>}
+      {sources.length > 0 && (
+        <div className="chatbot-sources">
+          <p className="muted">Referenced knowledge</p>
+          <ul>
+            {sources.map((source) => (
+              <li key={source.id}>
+                <strong>{source.title || 'Untitled doc'}</strong>
+                {source.tags?.length ? <span>{source.tags.join(', ')}</span> : null}
+              </li>
             ))}
-            {loading && (
-              <article className="chatbot-message chatbot-message--assistant chatbot-message--typing">
-                <Loader2 size={16} className="spin" />
-                <span>Thinking...</span>
-              </article>
-            )}
-          </div>
-          {error && <p className="feedback feedback--error">{error}</p>}
-          {sources.length > 0 && (
-            <div className="chatbot-sources">
-              <p className="muted">Referenced knowledge</p>
-              <ul>
-                {sources.map((source) => (
-                  <li key={source.id}>
-                    <strong>{source.title || 'Untitled doc'}</strong>
-                    {source.tags?.length ? <span>{source.tags.join(', ')}</span> : null}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          <form className="chatbot-input" onSubmit={handleSubmit}>
-            <input
-              value={input}
-              onChange={(event) => setInput(event.target.value)}
-              placeholder={endpoint ? 'Ask a money question…' : 'Configure VITE_RAG_CHAT_URL to enable chat'}
-              disabled={loading || !endpoint}
-            />
-            <button type="submit" className="btn btn-primary" disabled={!input.trim() || loading || !endpoint} aria-label="Send message">
-              {loading ? <Loader2 size={16} className="spin" /> : <Send size={16} />}
-            </button>
-          </form>
-        </section>
+          </ul>
+        </div>
       )}
-      <button className="chatbot-fab" onClick={toggleWidget} aria-label="Toggle AI chat">
-        {isOpen ? <X size={18} /> : <MessageCircle size={22} />}
-      </button>
-    </div>
+      <form className="chatbot-input" onSubmit={handleSubmit}>
+        <input
+          value={input}
+          onChange={(event) => setInput(event.target.value)}
+          placeholder={endpoint ? 'Ask a money question…' : 'Configure VITE_RAG_CHAT_URL to enable chat'}
+          disabled={loading || !endpoint}
+        />
+        <button type="submit" className="btn btn-primary" disabled={!input.trim() || loading || !endpoint} aria-label="Send message">
+          {loading ? <Loader2 size={16} className="spin" /> : <Send size={16} />}
+        </button>
+      </form>
+    </section>
   )
 }

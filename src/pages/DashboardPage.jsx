@@ -24,6 +24,7 @@ import {
   ArrowDownLeft
 } from 'lucide-react'
 import CoachingInsightsCard from '../components/CoachingInsightsCard.jsx'
+import ChatbotWidget from '../components/ChatbotWidget.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useTransactionsData } from '../hooks/useTransactionsData.js'
 import { fetchCoachingInsights, fetchFinancialGoals } from '../services/supabaseService.js'
@@ -388,38 +389,43 @@ export default function DashboardPage() {
               <h3>AI coaching recommendations</h3>
               {loadingInsights && <span className="muted">Analyzing your data…</span>}
             </div>
-            {loadingInsights ? (
-              <article className="card placeholder-card">
-                <div className="spinner" />
-                <p className="muted">Generating personalized insights…</p>
-              </article>
-            ) : insightsError ? (
-              <article className="card placeholder-card">
-                <p className="muted">{insightsError}</p>
-              </article>
-            ) : coachingData?.insights?.length ? (
-              <div className="insight-stack">
-                {coachingData.insights.map((insight, index) => (
-                  <CoachingInsightsCard key={`${insight.title}-${index}`} insight={insight} />
-                ))}
-                {coachingData.budgetAdvice && (
-                  <article className="card info-card">
-                    <h4>30-day budget guidance</h4>
-                    <p>{coachingData.budgetAdvice}</p>
+            <div className="insights-layout">
+              <div className="insights-primary">
+                {loadingInsights ? (
+                  <article className="card placeholder-card">
+                    <div className="spinner" />
+                    <p className="muted">Generating personalized insights…</p>
                   </article>
-                )}
-                {coachingData.predictiveAlerts && (
-                  <article className="card warning-card">
-                    <h4>30-60 day outlook</h4>
-                    <p>{coachingData.predictiveAlerts}</p>
+                ) : insightsError ? (
+                  <article className="card placeholder-card">
+                    <p className="muted">{insightsError}</p>
+                  </article>
+                ) : coachingData?.insights?.length ? (
+                  <div className="insight-stack">
+                    {coachingData.insights.map((insight, index) => (
+                      <CoachingInsightsCard key={`${insight.title}-${index}`} insight={insight} />
+                    ))}
+                    {coachingData.budgetAdvice && (
+                      <article className="card info-card">
+                        <h4>30-day budget guidance</h4>
+                        <p>{coachingData.budgetAdvice}</p>
+                      </article>
+                    )}
+                    {coachingData.predictiveAlerts && (
+                      <article className="card warning-card">
+                        <h4>30-60 day outlook</h4>
+                        <p>{coachingData.predictiveAlerts}</p>
+                      </article>
+                    )}
+                  </div>
+                ) : (
+                  <article className="card placeholder-card">
+                    <p className="muted">No insights yet. Start logging your transactions!</p>
                   </article>
                 )}
               </div>
-            ) : (
-              <article className="card placeholder-card">
-                <p className="muted">No insights yet. Start logging your transactions!</p>
-              </article>
-            )}
+              <ChatbotWidget className="insights-chatbot" />
+            </div>
           </section>
         )}
       </main>
